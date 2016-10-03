@@ -13,30 +13,114 @@ except ImportError:
 
 import sys
 
-# definations for move
-UP = 1
-RIGHT = 2
-DOWN = 3
-LEFT = 4
+# definations for move, UP, RIGHT, DOWN, LEFT
+U = 1
+R = 2
+D = 3
+L = 4
+
+move_map_letter = {U:'U',R:'R',D:'D',L:'L'}
+move_map_action = {U:[-1, 0],R:[0, 1],D:[1, 0],L:[0, -1]}
 
 class State:
-	def __init__(self, board):
-		n = len(board)
+	def __init__(self, board, heuristic_id):
+		self.n = len(board)
 		self.board = []
-		for i in range(n):
+		self.h_id = heuristic_id
+		for i in range(self.n):
 			self.board.append([])
-			for j in range(n):
+			for j in range(self.n):
 				self.board[i][j] = board[i][j]
+
+	# calculate h(n) for current state
 	def get_h_val(self):
-		pass
-	def move_func(self, move):
-		pass
+		if self.h_id == 1:
+			return self.heuristic_func_1()
+		elif self.h_id == 2:
+			return self.heuristic_func_2()
+
+	
+	# use number of misplaced tiles as h()
+	def heuristic_func_1(self):
+		h = 0
+		N = (self.n) * (self.n)
+		for i in range(self.n):
+			for j in range(self.n):
+				if (self.board[i][j] % N) != ((i * self.n + j + 1) % N):
+					h += 1
+		return h
+
+	# use sum of distance to end positions
+	def heuristic_func_2(self):
+		h = 0
+		N = (self.n) * (self.n)
+		for i in range(self.n):
+			for j in range(self.n):
+				if (self.board[i][j] % N) != ((i * self.n + j + 1) % N):
+					v = self.board[i][j]
+					if v == 0:
+						x, y = (self.n - 1), (self.n - 1)
+					else:
+						x = (v - 1) / self.n
+						y = (v - 1) % self.n
+
+					h += abs(x - i) + abs(y - i)
+		return h
+
+	def find_gap(self):
+    		for i in range(len(self.board)):
+    		    for j in range(len(self.board[i])):
+    		        if self.board[i][j] == 0:
+    		            return i,j
+    		return -1, -1
+
+	def next_pos(self, x, y, move):
+		next_x = x + move[0]
+		next_y = y + move[1]
+
+		return next_x, next_y
+
+	def move_gap(self, move):
+		x, y = self.find_gap()
+		x2, y2 = self.next_pos(x, y, move)
+
+		tmp = self.board[x][y]
+		self.board[x][y] = self.board[x2][y2]
+		self.board[x2][y2] = tmp	
+
 	def is_goal(self):
-		pass
+		N = (self.n) * (self.n)
+		for i in range(self.n):
+			for j in range(self.n):
+				if (self.board[i][j] % N) != ((i * self.n + j + 1) % N):
+					return False
+		return True
+
 	def is_same(self, state):
-		pass
+		for i in range(self.n):
+			for j in range(self.n):
+				if self.board[i][j] != state.board[i][j]:
+					return False
+		return True
+
+	def is_move_legal(self, x, y, move):
+		x1, y1 = next_pos(x, y, move)
+		return ((x1 >= 0) and (x1 < self.n) and (y1 >= 0) and (y1 < self.n))
+
 	def actions(self):
-		pass
+		actions = []
+		x, y = self.find_gap()
+
+		if self.is_move_legal(x, y, move_map_action[U]):
+			actions.append(U)
+		elif self.is_move_legal(x, y, move_map_action[R]):
+			actions.append(R)
+		elif self.is_move_legal(x, y, move_map_action[D]):
+			actions.append(D)
+		elif self.is_move_legal(x, y, move_map_action[L]):
+			actions.append(L)
+
+		return actions
 
 class Node:
 	def __init__(self, state):
@@ -46,14 +130,14 @@ class Node:
 		self.h_val = state.get_h_val()
 		self.f_val = self.g_val + self.h_val
 
-	def __init__(self, old_node, move):
+	def __init__(self, old_node, action):
 		self.state = State(old_node.board)
-		self.state.move_func(move)
+		self.state.move_gap(move_map_action(action))
 		# copy history
 		self.history_move = []
 		for m in old_state.history_move:
 			self.history_move.append(m)
-		self.history_move.append(move)
+		self.history_move.append(move_map_letter(action))
 		# update g_val
 		self.g_val = old_node.g_val + 1
 		# update h_val
@@ -67,6 +151,7 @@ class Node:
 		except (AttributeError, TypeError):
 			# _cmpkey not implemented, or return differnt type
 			return NotImplemented
+
 	def _cmpkey(self):
 		return self.f_val
 	def __lt__(self, other):
@@ -83,9 +168,6 @@ class Node:
 		return self._cmp(other, lambda s, o : s != o)
 	def __repr__(self):
 		pass
-
-
-q = Q.PriorityQueue()
 
 class ExploredList:
 	def __init__(self):
@@ -108,10 +190,31 @@ class AStar:
 		self.target = None
 
 	def get_board_from_input(self, in_file):
-		pass
+		lines = in_file.readlines()
+		board = []
+		i,j = 0,0
+		n = len(lines)
+		for line in lines:
+			board.append([])
+			fields = line.strip().split(',')
+
+			assert(len(fields) == n)
+
+			for j in range(n):
+				if (fields[j] != ''):
+					board[i][j] = int(fields[j])
+				else:
+					board[i][j] = 0
+			i += 1
+		return board
 
 	def generate_output(self, out_file):
-		pass
+		if self.target != None:
+			for x in self.target.history_move:
+				out_file.write(x)
+				out_file.write(',')
+		else:
+			print('Error in generate_output(): no target found in A* saerch!')
 
 	def search(self):
 		start_node = Node(self.start_state)
@@ -155,8 +258,8 @@ if __name__ == '__main__':
 	else:
 		usage(1)
 
-
-	a_star = AStar(in_file)
+	# try heuristic_id == 1
+	a_star = AStar(in_file, 1)
 	if a_star.search() != None:
 		a_star.generate_output(out_file)
 		print("A-star search succeed!")
