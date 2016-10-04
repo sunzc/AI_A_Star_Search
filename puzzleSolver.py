@@ -30,8 +30,17 @@ class State:
 		for i in range(self.n):
 			self.board.append([])
 			for j in range(self.n):
-				self.board[i][j] = board[i][j]
+				self.board[i].append(board[i][j])
+		self.print_board()
 
+	def print_board(self):
+    		print("")
+    		for row in self.board:
+    		    row_str = ""
+    		    for cell in row:
+    		        row_str += str(cell) + " "
+    		    print(row_str)
+		
 	# calculate h(n) for current state
 	def get_h_val(self):
 		if self.h_id == 1:
@@ -104,7 +113,7 @@ class State:
 		return True
 
 	def is_move_legal(self, x, y, move):
-		x1, y1 = next_pos(x, y, move)
+		x1, y1 = self.next_pos(x, y, move)
 		return ((x1 >= 0) and (x1 < self.n) and (y1 >= 0) and (y1 < self.n))
 
 	def actions(self):
@@ -130,20 +139,24 @@ class Node:
 		self.h_val = state.get_h_val()
 		self.f_val = self.g_val + self.h_val
 
-	def __init__(self, old_node, action):
-		self.state = State(old_node.board)
-		self.state.move_gap(move_map_action(action))
+	def transfer(old_node, action):
+		state = State(old_node.state.board, old_node.state.h_id)
+		state.move_gap(move_map_action[action])
+		new_node = Node(state)
+
 		# copy history
-		self.history_move = []
-		for m in old_state.history_move:
-			self.history_move.append(m)
-		self.history_move.append(move_map_letter(action))
+		for m in old_node.history_move:
+			new_node.history_move.append(m)
+		new_node.history_move.append(move_map_letter[action])
+
 		# update g_val
-		self.g_val = old_node.g_val + 1
+		new_node.g_val = old_node.g_val + 1
 		# update h_val
-		self.h_val = self.state.get_h_val()
+		new_node.h_val = new_node.state.get_h_val()
 		# update f_val
-		self.f_val = self.g_val + self.h_val
+		new_node.f_val = new_node.g_val + new_node.h_val
+
+		return new_node
 
 	def _cmp(self, other, method):
 		try:
@@ -178,15 +191,16 @@ class ExploredList:
 		for s in self.explored:
 			if s.is_same(state):
 				return True
-		return True
+		return False
 
 class AStar:
-	def __init__(self, in_file):
+	def __init__(self, in_file, heuristic_id):
 		# construct start node
+		self.h_id = heuristic_id
 		board = self.get_board_from_input(in_file)
-		self.start_state = State(board)
+		self.start_state = State(board, heuristic_id)
 		self.frontier = Q.PriorityQueue()
-		self.explored = ExploredList()
+		self.explored_list = ExploredList()
 		self.target = None
 
 	def get_board_from_input(self, in_file):
@@ -202,9 +216,9 @@ class AStar:
 
 			for j in range(n):
 				if (fields[j] != ''):
-					board[i][j] = int(fields[j])
+					board[i].append(int(fields[j]))
 				else:
-					board[i][j] = 0
+					board[i].append(0)
 			i += 1
 		return board
 
@@ -224,10 +238,10 @@ class AStar:
 			if current.state.is_goal():
 				self.target = current
 				return current
-			if not self.explored.has_state(current.state):
-				explored.add(current.state)
+			if not self.explored_list.has_state(current.state):
+				self.explored_list.add_state(current.state)
 				for action in current.state.actions():
-					new = State(current, action)
+					new = Node.transfer(current, action)
 					self.frontier.put(new)
 		return None
 # errnum:
@@ -255,8 +269,10 @@ if __name__ == '__main__':
 			out_file = open(sys.argv[4], 'w')
 		except:
 			usage(0)
+			exit(1)
 	else:
 		usage(1)
+		exit(1)
 
 	# try heuristic_id == 1
 	a_star = AStar(in_file, 1)
