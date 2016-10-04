@@ -31,7 +31,6 @@ class State:
 			self.board.append([])
 			for j in range(self.n):
 				self.board[i].append(board[i][j])
-		self.print_board()
 
 	def print_board(self):
 		print("")
@@ -40,6 +39,7 @@ class State:
 		    for cell in row:
 		        row_str += str(cell) + " "
 		    print(row_str)
+		print("")
 
 	# calculate h(n) for current state
 	def get_h_val(self):
@@ -159,6 +159,9 @@ class Node:
 		# update f_val
 		new_node.f_val = new_node.g_val + new_node.h_val
 
+		print("g_val: %d, h_val: %d, f_val:%d" % (new_node.g_val, new_node.h_val, new_node.f_val))
+		new_node.state.print_board()
+
 		return new_node
 
 	def _cmp(self, other, method):
@@ -227,9 +230,10 @@ class AStar:
 
 	def generate_output(self, out_file):
 		if self.target != None:
-			for x in self.target.history_move:
+			for x in self.target.history_move[:-1]:
 				out_file.write(x)
 				out_file.write(',')
+			out_file.write(self.target.history_move[-1])
 		else:
 			print('Error in generate_output(): no target found in A* saerch!')
 
@@ -246,6 +250,8 @@ class AStar:
 				for action in current.state.actions():
 					new = Node.transfer(current, action)
 					self.frontier.put(new)
+			else:
+				print ("repeated generated state")
 		return None
 # errnum:
 # 	0 means Invalid arguments
