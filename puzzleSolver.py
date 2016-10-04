@@ -122,11 +122,14 @@ class State:
 
 		if self.is_move_legal(x, y, move_map_action[U]):
 			actions.append(U)
-		elif self.is_move_legal(x, y, move_map_action[R]):
+
+		if self.is_move_legal(x, y, move_map_action[R]):
 			actions.append(R)
-		elif self.is_move_legal(x, y, move_map_action[D]):
+
+		if self.is_move_legal(x, y, move_map_action[D]):
 			actions.append(D)
-		elif self.is_move_legal(x, y, move_map_action[L]):
+
+		if self.is_move_legal(x, y, move_map_action[L]):
 			actions.append(L)
 
 		return actions
