@@ -34,13 +34,13 @@ class State:
 		self.print_board()
 
 	def print_board(self):
-    		print("")
-    		for row in self.board:
-    		    row_str = ""
-    		    for cell in row:
-    		        row_str += str(cell) + " "
-    		    print(row_str)
-		
+		print("")
+		for row in self.board:
+		    row_str = ""
+		    for cell in row:
+		        row_str += str(cell) + " "
+		    print(row_str)
+
 	# calculate h(n) for current state
 	def get_h_val(self):
 		if self.h_id == 1:
