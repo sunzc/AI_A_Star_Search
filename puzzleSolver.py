@@ -12,6 +12,7 @@ except ImportError:
 	import queue as Q
 
 import sys
+import os
 
 # definations for move, UP, RIGHT, DOWN, LEFT
 U = 1
@@ -283,7 +284,7 @@ if __name__ == '__main__':
 		usage(1)
 		exit(1)
 
-	# try heuristic_id == 1
+	print("Try heuristic_id == 1")
 	a_star = AStar(in_file, 1)
 	if a_star.search() != None:
 		a_star.generate_output(out_file)
@@ -293,3 +294,20 @@ if __name__ == '__main__':
 
 	in_file.close()
 	out_file.close()
+	os.system("cat res.txt");
+	print("")
+
+	print("Try heuristic_id == 2")
+	in_file = open(sys.argv[3], 'r')
+	out_file = open(sys.argv[4], 'w')
+	a_star_2 = AStar(in_file, 2)
+	if a_star_2.search() != None:
+		a_star_2.generate_output(out_file)
+		print("A-star search succeed!")
+	else:
+		print("Error: A-star search failed!")
+
+	in_file.close()
+	out_file.close()
+	os.system("cat res.txt");
+	print("")
