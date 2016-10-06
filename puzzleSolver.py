@@ -254,6 +254,38 @@ class AStar:
 			else:
 				print ("repeated generated state")
 		return None
+
+	# Iterative deepening IDA*
+	def IDA_search(self, cost_limit):
+		for cl in range(1, cost_limit + 1):
+			print("IDA_Search cost_limit:%d" % cl)
+			res = self.cost_limit_search(cl)
+			if res != None:
+				self.target = res
+				return res
+		return None
+
+	def cost_limit_search(self, cost_limit):
+		frontier = Q.PriorityQueue()
+		explored_list = ExploredList()
+
+		start_node = Node(self.start_state)
+		frontier.put(start_node)
+		while not frontier.empty():
+			current = frontier.get()
+			if current.state.is_goal():
+				return current
+			if not explored_list.has_state(current.state):
+				explored_list.add_state(current.state)
+				for action in current.state.actions():
+					new = Node.transfer(current, action)
+					# only add node with f_val < cost_limit
+					if (new.f_val <= cost_limit):
+						frontier.put(new)
+			else:
+				print ("repeated generated state")
+		return None
+
 # errnum:
 # 	0 means Invalid arguments
 #	1 means Wrong number of arguments
@@ -306,6 +338,22 @@ if __name__ == '__main__':
 		print("A-star search succeed!")
 	else:
 		print("Error: A-star search failed!")
+
+	in_file.close()
+	out_file.close()
+	os.system("cat res.txt");
+	print("")
+
+	cost_limit = 5
+	print("Try IDA* with cost_limit == %d "% cost_limit)
+	in_file = open(sys.argv[3], 'r')
+	out_file = open(sys.argv[4], 'w')
+	a_star_3 = AStar(in_file, 1)
+	if a_star_3.IDA_search(cost_limit) != None:
+		a_star_3.generate_output(out_file)
+		print("IDA* search succeed!")
+	else:
+		print("Error: IDA* search failed!")
 
 	in_file.close()
 	out_file.close()
