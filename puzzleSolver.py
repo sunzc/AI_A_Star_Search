@@ -53,28 +53,31 @@ class State:
 	# use number of misplaced tiles as h()
 	def heuristic_func_1(self):
 		h = 0
-		N = (self.n) * (self.n)
 		for i in range(self.n):
 			for j in range(self.n):
-				if (self.board[i][j] % N) != ((i * self.n + j + 1) % N):
+				if (self.board[i][j]) == 0:
+					continue
+				elif (self.board[i][j]) != (i * self.n + j + 1):
 					h += 1
+				else:
+					continue
 		return h
 
 	# use sum of distance to end positions
 	def heuristic_func_2(self):
 		h = 0
-		N = (self.n) * (self.n)
 		for i in range(self.n):
 			for j in range(self.n):
-				if (self.board[i][j] % N) != ((i * self.n + j + 1) % N):
-					v = self.board[i][j]
-					if v == 0:
-						x, y = (self.n - 1), (self.n - 1)
-					else:
-						x = (v - 1) / self.n
-						y = (v - 1) % self.n
-
+				v = self.board[i][j]
+				if v == 0:
+					continue
+				elif v != (i * self.n + j + 1) :
+					x = (v - 1) / self.n
+					y = (v - 1) % self.n
 					h += abs(x - i) + abs(y - i)
+				else:
+					continue
+
 		return h
 
 	def find_gap(self):
@@ -143,6 +146,7 @@ class Node:
 		self.h_val = state.get_h_val()
 		self.f_val = self.g_val + self.h_val
 
+	# given one node, and a possible action, return the next node after action
 	def transfer(old_node, action):
 		state = State(old_node.state.board, old_node.state.h_id)
 		state.move_gap(move_map_action[action])
@@ -165,6 +169,7 @@ class Node:
 
 		return new_node
 
+	# common compare function used by other compare related functions
 	def _cmp(self, other, method):
 		try:
 			return method(self._cmpkey(), other._cmpkey())
@@ -172,8 +177,11 @@ class Node:
 			# _cmpkey not implemented, or return differnt type
 			return NotImplemented
 
+	# return the key of node, (here is priority in AStar) that to be compared
 	def _cmpkey(self):
 		return self.f_val
+	# below are compare functions required by python3 to support flexible compare operation
+	# using fancy lambda functions which return a functions!
 	def __lt__(self, other):
 		return self._cmp(other, lambda s, o : s < o)
 	def __le__(self, other):
@@ -186,8 +194,6 @@ class Node:
 		return self._cmp(other, lambda s, o : s == o)
 	def __ne__(self, other):
 		return self._cmp(other, lambda s, o : s != o)
-	def __repr__(self):
-		pass
 
 class ExploredList:
 	def __init__(self):
@@ -210,6 +216,7 @@ class AStar:
 		self.explored_list = ExploredList()
 		self.target = None
 
+	# construct a board from the input file
 	def get_board_from_input(self, in_file):
 		lines = in_file.readlines()
 		board = []
@@ -229,6 +236,7 @@ class AStar:
 			i += 1
 		return board
 
+	# generate output file from the final node's history moves
 	def generate_output(self, out_file):
 		if self.target != None:
 			for x in self.target.history_move[:-1]:
@@ -238,6 +246,7 @@ class AStar:
 		else:
 			print('Error in generate_output(): no target found in A* saerch!')
 
+	# A Star Search implementation
 	def search(self):
 		start_node = Node(self.start_state)
 		self.frontier.put(start_node)
@@ -255,7 +264,7 @@ class AStar:
 				print ("repeated generated state")
 		return None
 
-	# Iterative deepening IDA*
+	# Iterative deepening IDA*, each time it call the cost_limit_search()
 	def IDA_search(self, cost_limit):
 		for cl in range(1, cost_limit + 1):
 			print("IDA_Search cost_limit:%d" % cl)
@@ -265,6 +274,7 @@ class AStar:
 				return res
 		return None
 
+	# given a cost_limit, do the search
 	def cost_limit_search(self, cost_limit):
 		frontier = Q.PriorityQueue()
 		explored_list = ExploredList()
@@ -316,46 +326,35 @@ if __name__ == '__main__':
 		usage(1)
 		exit(1)
 
-	print("Try heuristic_id == 1")
-	a_star = AStar(in_file, 1)
-	if a_star.search() != None:
-		a_star.generate_output(out_file)
-		print("A-star search succeed!")
+	h_id = 1
+	cost_limit = 23
+
+	if alg == 1: # A* is chosen
+		print("Try heuristic_id == %d" % h_id)
+		a_star = AStar(in_file, h_id)
+		if a_star.search() != None:
+			a_star.generate_output(out_file)
+			print("A-star search succeed! h_id:%d" % h_id)
+		else:
+			print("Error: A-star search failed! h_id:%d" % h_id)
+	elif alg == 2: # Memory bounded variant is chosen
+		print("Try IDA* with cost_limit == %d "% cost_limit)
+		ida = AStar(in_file, h_id)
+		if ida.IDA_search(cost_limit) != None:
+			ida.generate_output(out_file)
+			print("IDA* search succeed! h_id = %d" % h_id)
+		else:
+			print("Error: IDA* search failed! h_id = %d" % h_id)
 	else:
-		print("Error: A-star search failed!")
+		print("ERROR: unsupported Algorithm ID!")
+		usage(0)
+
+		in_file.close()
+		out_file.close()
+
+		exit(1)
 
 	in_file.close()
 	out_file.close()
-	os.system("cat res.txt");
-	print("")
-
-	print("Try heuristic_id == 2")
-	in_file = open(sys.argv[3], 'r')
-	out_file = open(sys.argv[4], 'w')
-	a_star_2 = AStar(in_file, 2)
-	if a_star_2.search() != None:
-		a_star_2.generate_output(out_file)
-		print("A-star search succeed!")
-	else:
-		print("Error: A-star search failed!")
-
-	in_file.close()
-	out_file.close()
-	os.system("cat res.txt");
-	print("")
-
-	cost_limit = 5
-	print("Try IDA* with cost_limit == %d "% cost_limit)
-	in_file = open(sys.argv[3], 'r')
-	out_file = open(sys.argv[4], 'w')
-	a_star_3 = AStar(in_file, 1)
-	if a_star_3.IDA_search(cost_limit) != None:
-		a_star_3.generate_output(out_file)
-		print("IDA* search succeed!")
-	else:
-		print("Error: IDA* search failed!")
-
-	in_file.close()
-	out_file.close()
-	os.system("cat res.txt");
+	os.system("cat %s" % sys.argv[4]);
 	print("")
