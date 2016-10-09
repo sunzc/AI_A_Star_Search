@@ -169,6 +169,13 @@ class Node:
 
 		return new_node
 
+	def successors(self):
+		successors = Q.PriorityQueue()
+		for action in self.state.actions():
+			new = Node.transfer(self, action)
+			successors.put(new)
+		return successors
+
 	# common compare function used by other compare related functions
 	def _cmp(self, other, method):
 		try:
@@ -247,6 +254,7 @@ class AStar:
 			print('Error in generate_output(): no target found in A* saerch!')
 
 	# A Star Search implementation
+	#@profile
 	def search(self):
 		start_node = Node(self.start_state)
 		self.frontier.put(start_node)
@@ -296,6 +304,41 @@ class AStar:
 				print ("repeated generated state")
 		return None
 
+	# pseudo code refer to https://en.wikipedia.org/wiki/Iterative_deepening_A*
+	#@profile
+	def real_ida_star(self, cost_limit):
+		self.cost_limit = cost_limit
+
+		root = Node(self.start_state)
+		bound = root.h_val
+		while True:
+			t = self.real_cost_limit_search(root, bound)
+			if t == 'FOUND':
+				return bound
+			if t == cost_limit:
+				return 'NOT_FOUND'
+			print("real_ida_star: iteration finished, next bound :%d" % t)
+			bound = t
+
+	#@profile
+	def real_cost_limit_search(self, node, bound):
+		f_val = node.f_val
+		if f_val > bound:
+			return f_val
+		if node.state.is_goal():
+			self.target = node
+			return 'FOUND'
+		min_bound = self.cost_limit
+		successors = node.successors()
+		while not successors.empty():
+			succ = successors.get()
+			t = self.real_cost_limit_search(succ, bound)
+			if t == 'FOUND':
+				return 'FOUND'
+			if t < min_bound:
+				min_bound = t
+		return min_bound
+		
 # errnum:
 # 	0 means Invalid arguments
 #	1 means Wrong number of arguments
@@ -340,9 +383,11 @@ if __name__ == '__main__':
 	elif alg == 2: # Memory bounded variant is chosen
 		print("Try IDA* with cost_limit == %d "% cost_limit)
 		ida = AStar(in_file, h_id)
-		if ida.IDA_search(cost_limit) != None:
+		#if ida.IDA_search(cost_limit) != None:
+		ret_bound = ida.real_ida_star(cost_limit)
+		if ret_bound != 'NOT_FOUND':
 			ida.generate_output(out_file)
-			print("IDA* search succeed! h_id = %d" % h_id)
+			print("IDA* search succeed! h_id = %d , ret_bound:%d" % (h_id, ret_bound))
 		else:
 			print("Error: IDA* search failed! h_id = %d" % h_id)
 	else:
