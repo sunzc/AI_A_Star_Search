@@ -170,6 +170,7 @@ class Node:
 
 		return new_node
 
+	# return successors for current node, using priority queue, used in IDA*
 	def successors(self):
 		successors = Q.PriorityQueue()
 		for action in self.state.actions():
