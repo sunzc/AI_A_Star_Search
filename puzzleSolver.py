@@ -13,6 +13,7 @@ except ImportError:
 
 import sys
 import os
+import time
 
 # definations for move, UP, RIGHT, DOWN, LEFT
 U = 1
@@ -164,8 +165,8 @@ class Node:
 		# update f_val
 		new_node.f_val = new_node.g_val + new_node.h_val
 
-		print("g_val: %d, h_val: %d, f_val:%d" % (new_node.g_val, new_node.h_val, new_node.f_val))
-		new_node.state.print_board()
+		#print("g_val: %d, h_val: %d, f_val:%d" % (new_node.g_val, new_node.h_val, new_node.f_val))
+		#new_node.state.print_board()
 
 		return new_node
 
@@ -269,7 +270,8 @@ class AStar:
 					new = Node.transfer(current, action)
 					self.frontier.put(new)
 			else:
-				print ("repeated generated state")
+				pass
+				#print ("repeated generated state")
 		return None
 
 	# Iterative deepening IDA*, each time it call the cost_limit_search()
@@ -362,6 +364,7 @@ if __name__ == '__main__':
 			n = int(sys.argv[2]) # 3 = 8-puzzle, 4 = 15-puzzle format
 			in_file = open(sys.argv[3], 'r')
 			out_file = open(sys.argv[4], 'w')
+	#		h_id = int(sys.argv[5])
 		except:
 			usage(0)
 			exit(1)
@@ -369,15 +372,20 @@ if __name__ == '__main__':
 		usage(1)
 		exit(1)
 
-	h_id = 1
-	cost_limit = 23
+	h_id = 2
+	cost_limit = 30
 
 	if alg == 1: # A* is chosen
 		print("Try heuristic_id == %d" % h_id)
 		a_star = AStar(in_file, h_id)
+		ts1 = time.time()
 		if a_star.search() != None:
 			a_star.generate_output(out_file)
-			print("A-star search succeed! h_id:%d" % h_id)
+			ts2 = time.time()
+			states_explored = len(a_star.explored_list.explored)
+			interval = int((ts2 - ts1) * 1000) # ms
+			depth = len(a_star.target.history_move)
+			print("A-star search succeed! h_id:%d, states_explored:%d, interval:%d, depth:%d" % (h_id, states_explored, interval, depth))
 		else:
 			print("Error: A-star search failed! h_id:%d" % h_id)
 	elif alg == 2: # Memory bounded variant is chosen
