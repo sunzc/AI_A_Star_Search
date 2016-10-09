@@ -374,7 +374,7 @@ if __name__ == '__main__':
 		exit(1)
 
 	h_id = 2
-	cost_limit = 30
+	cost_limit = 60
 
 	if alg == 1: # A* is chosen
 		print("Try heuristic_id == %d" % h_id)
