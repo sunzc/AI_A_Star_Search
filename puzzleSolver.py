@@ -75,7 +75,7 @@ class State:
 				elif v != (i * self.n + j + 1) :
 					x = (v - 1) / self.n
 					y = (v - 1) % self.n
-					h += abs(x - i) + abs(y - i)
+					h += abs(x - i) + abs(y - j)
 				else:
 					continue
 
